@@ -38,6 +38,8 @@ jobs:
           pip install pytest pytest-cov
 
       - name: Run tests with coverage (fail if coverage < 80%)
+        env:
+           PYTHONPATH: ${{ github.workspace }}
         run: |
           pytest --maxfail=1 -q --cov=src --cov-report=xml --cov-report=term --cov-fail-under=80
 
