@@ -24,7 +24,7 @@ def test_metrics_endpoint_and_score():
     class Dummy:
         def predict(self, X):
             return [0]
-    # monkeypatch the model
+    # monkeypatch the model for a normal request
     app.dependency_overrides = {}
     import src.api.app as _app_module
     _app_module._model = Dummy()
@@ -35,6 +35,26 @@ def test_metrics_endpoint_and_score():
     r3 = client.get("/metrics")
     assert "api_request_count" in r3.text
     assert re.search(r"api_request_count\{endpoint=\"/score\",method=\"POST\",http_status=\"200\"\} \d+", r3.text)
+
+
+def test_score_no_model():
+    # make sure when no model is loaded we return 500 and metrics updated
+    import src.api.app as _app_module
+    _app_module._model = None
+    r = client.post("/score", json={"a": 1})
+    assert r.status_code == 500
+    assert "Modelo não carregado" in r.text
+
+
+def test_score_incompatible_model():
+    # model object has neither predict nor predict_proba
+    class Bad:
+        pass
+    import src.api.app as _app_module
+    _app_module._model = Bad()
+    r = client.post("/score", json={"a": 1})
+    assert r.status_code == 500
+    assert "Modelo incompatível" in r.text
 
 
 def test_train_evaluate_metrics():
