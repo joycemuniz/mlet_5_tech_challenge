@@ -21,6 +21,11 @@ def metrics_endpoint():
     data, content_type = metrics.metrics_endpoint()
     return Response(content=data, media_type=content_type)
 
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 _model = None
 _features = None
 
@@ -40,6 +45,7 @@ def load_artifacts():
         _features = json.loads(features_path.read_text(encoding="utf-8"))
     else:
         _features = None
+
 
 @app.on_event("startup")
 def startup_event():
@@ -77,3 +83,4 @@ def score(payload: Dict[str, Any]):
 
     metrics.REQUEST_COUNT.labels(endpoint="/score", method="POST", http_status="200").inc()
     return {"classe_predita": pred, "score_risco": round(proba * 100, 2)}
+

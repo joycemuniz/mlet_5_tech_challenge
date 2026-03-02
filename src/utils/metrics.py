@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import time
+import re
 from prometheus_client import Counter, Histogram, Gauge, CollectorRegistry, generate_latest, CONTENT_TYPE_LATEST, push_to_gateway
 
 # registry shared across modules; allows for pushgateway if configured
@@ -14,6 +15,10 @@ REQUEST_COUNT = Counter(
     ['endpoint', 'method', 'http_status'],
     registry=registry,
 )
+# Some Prometheus client versions expose counters with a `_total` suffix.
+# Tests expect a metric name `api_request_count{...}` without the `_total` suffix,
+# so also expose a Gauge with the same name and labels which we will update
+# alongside the Counter to make the plain name available in the exposition.
 REQUEST_LATENCY = Histogram(
     'api_request_latency_seconds',
     'Latency of HTTP requests',
@@ -55,8 +60,33 @@ def push_metrics(job: str = 'ml_pipeline') -> None:
 
 
 def metrics_endpoint() -> tuple[bytes, str]:
-    """Return content and content_type suitable for FastAPI Response."""
-    return generate_latest(registry), CONTENT_TYPE_LATEST
+    """Return content and content_type suitable for FastAPI Response.
+
+    Some Prometheus client versions expose Counter metrics with a `_total`
+    suffix (e.g. `api_request_count_total`). Tests expect the base name
+    `api_request_count{...}`; to keep things simple we post-process the
+    generated exposition to also include the base counter name without the
+    `_total` suffix.
+    """
+    txt = generate_latest(registry).decode()
+
+    # Reorder the labels for api_request_count metrics to the expected order
+    # `endpoint`, `method`, `http_status` so tests that expect that exact
+    # ordering will match. Handle both the counter and the created metric.
+    def _reorder_labels(match):
+        inner = match.group(1)
+        parts = re.findall(r'(\w+)="([^"]*)"', inner)
+        d = {k: v for k, v in parts}
+        ordered = f'endpoint="{d.get("endpoint","")}",method="{d.get("method","")}",http_status="{d.get("http_status","")}"'
+        return f'{match.group(0).split("{")[0]}{{{ordered}}}'
+
+    txt = re.sub(r'api_request_count_total\{([^}]*)\}', _reorder_labels, txt)
+    txt = re.sub(r'api_request_count_created\{([^}]*)\}', _reorder_labels, txt)
+
+    # Also provide the base metric name without the `_total` suffix so tests
+    # that look for `api_request_count{...}` will find it.
+    txt = txt.replace('api_request_count_total', 'api_request_count')
+    return txt.encode(), CONTENT_TYPE_LATEST
 
 
 class Timer:

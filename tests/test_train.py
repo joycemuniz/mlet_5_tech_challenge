@@ -1,4 +1,5 @@
 import pandas as pd
+import pytest
 from src.modeling.train import split_by_year, train_model
 
 def test_split_by_year():
@@ -14,6 +15,17 @@ def test_split_by_year():
     assert len(X_test) == 1
     assert y_train.tolist() == [1, 0]
     assert y_test.tolist() == [1]
+
+
+def test_split_by_year_errors():
+    df = pd.DataFrame({'POSSUI_DEFASAGEM': [1], 'ANO': [2022]})
+    # remove ANO column
+    with pytest.raises(ValueError):
+        split_by_year(df.drop(columns=['ANO']))
+    # missing target
+    df2 = pd.DataFrame({'ANO': [2022]})
+    with pytest.raises(ValueError):
+        split_by_year(df2)
 
 def test_train_model():
     import numpy as np
