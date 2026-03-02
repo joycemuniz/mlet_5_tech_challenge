@@ -21,6 +21,11 @@ def metrics_endpoint():
     data, content_type = metrics.metrics_endpoint()
     return Response(content=data, media_type=content_type)
 
+
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 _model = None
 _features = None
 

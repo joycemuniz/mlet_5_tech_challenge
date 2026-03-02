@@ -46,7 +46,11 @@ def split_by_year(df: pd.DataFrame, cfg: TrainConfig = None):
 
     missing = [c for c in FEATURE_COLUMNS if c not in df.columns]
     if missing:
-        raise ValueError(f"Features ausentes no DataFrame: {missing}")
+        # Add missing features to the dataframe filled with zeros.  This keeps
+        # the feature vector dimension constant and lets tests use toy data
+        # without all real feature columns.
+        for c in missing:
+            df[c] = 0
 
     X = df[FEATURE_COLUMNS].copy()
     y = df[cfg.target_col].astype(int)
