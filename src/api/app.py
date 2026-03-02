@@ -41,6 +41,7 @@ def load_artifacts():
     else:
         _features = None
 
+
 @app.on_event("startup")
 def startup_event():
     load_artifacts()
@@ -77,3 +78,4 @@ def score(payload: Dict[str, Any]):
 
     metrics.REQUEST_COUNT.labels(endpoint="/score", method="POST", http_status="200").inc()
     return {"classe_predita": pred, "score_risco": round(proba * 100, 2)}
+
