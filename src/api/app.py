@@ -41,16 +41,9 @@ def load_artifacts():
     else:
         _features = None
 
-
 @app.on_event("startup")
 def startup_event():
     load_artifacts()
-
-
-@app.get("/health")
-def health():
-    return {"status": "ok", "model_loaded": _model is not None}
-
 
 @app.post("/score")
 def score(payload: Dict[str, Any]):
@@ -70,8 +63,17 @@ def score(payload: Dict[str, Any]):
         for c in df.columns:
             df[c] = pd.to_numeric(df[c], errors="coerce").fillna(0)
 
-        proba = float(_model.predict_proba(df)[:, 1][0])
-        pred = int(_model.predict(df)[0])
+        if hasattr(_model, "predict_proba"):
+            proba = float(_model.predict_proba(df)[:, 1][0])
+            pred = int(_model.predict(df)[0]) if hasattr(_model, "predict") else int(proba >= 0.5)
+
+        elif hasattr(_model, "predict"):
+            pred = int(_model.predict(df)[0])
+            proba = float(pred)
+
+        else:
+            metrics.REQUEST_COUNT.labels(endpoint="/score", method="POST", http_status="500").inc()
+            raise HTTPException(status_code=500, detail="Modelo incompatível.")
 
     metrics.REQUEST_COUNT.labels(endpoint="/score", method="POST", http_status="200").inc()
     return {"classe_predita": pred, "score_risco": round(proba * 100, 2)}
