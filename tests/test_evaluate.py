@@ -34,3 +34,43 @@ def test_evaluate_no_proba_and_save(tmp_path):
     df = pd.read_csv(outdir / 'predictions.csv')
     assert 'y_true' in df.columns
     assert 'y_pred' in df.columns
+
+
+def test_evaluate_with_proba_and_save(tmp_path):
+    """Modelo COM predict_proba → cobre linha 60 (print ROC) e linha 74 (score_risco)."""
+    import numpy as np
+    from src.modeling.evaluate import save_reports
+
+    X = pd.DataFrame(np.random.rand(20, 4), columns=['a', 'b', 'c', 'd'])
+    y = pd.Series([0, 1] * 10)
+    model = train_model(X, y)
+    results = evaluate_model(model, X, y)
+
+    # roc_auc deve ser calculado pois RandomForest tem predict_proba
+    assert results['roc_auc'] is not None
+    assert results['y_proba'] is not None
+
+    outdir = tmp_path / 'with_proba'
+    save_reports(results, X, y, out_dir=str(outdir))
+    df = pd.read_csv(outdir / 'predictions.csv')
+    # score_risco só aparece quando y_proba não é None (linha 74)
+    assert 'score_risco' in df.columns
+
+
+def test_save_reports_default_dir(monkeypatch, tmp_path):
+    """save_reports sem out_dir → usa REPORTS_DIR da config (linha 57)."""
+    import numpy as np
+    from src.modeling.evaluate import save_reports
+    import src.utils.config as cfg
+
+    monkeypatch.setattr(cfg, 'REPORTS_DIR', tmp_path)
+
+    class Dummy:
+        def predict(self, X):
+            return [0] * len(X)
+
+    X = pd.DataFrame(np.random.rand(4, 2), columns=['a', 'b'])
+    y = pd.Series([0, 1, 0, 1])
+    results = evaluate_model(Dummy(), X, y)
+    save_reports(results, X, y)  # sem out_dir
+    assert (tmp_path / 'metrics.json').exists()

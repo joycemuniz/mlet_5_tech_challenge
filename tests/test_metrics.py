@@ -80,3 +80,40 @@ def test_train_evaluate_metrics():
     # stage label should include equals sign
     assert 'stage="dummy"' in mtxt3
 
+
+def test_timer_context_manager():
+    """Timer deve registrar duração no Histogram (cobre __enter__/__exit__)."""
+    import time as _time
+    from prometheus_client import Histogram as _Hist, CollectorRegistry
+
+    reg = CollectorRegistry()
+    hist = _Hist('test_timer_hist', 'timer test', registry=reg)
+    timer = metrics.Timer(hist)
+
+    with timer:
+        _time.sleep(0.01)
+
+    # Verifica que alguma observação foi registrada
+    txt = metrics.generate_latest(reg).decode()
+    assert 'test_timer_hist' in txt
+
+
+def test_push_metrics_no_gateway(monkeypatch):
+    """push_metrics sem PROMETHEUS_PUSHGATEWAY → não lança exceção (linha 59)."""
+    monkeypatch.delenv('PROMETHEUS_PUSHGATEWAY', raising=False)
+    metrics.push_metrics()  # deve ser silencioso
+
+
+def test_push_metrics_with_gateway(monkeypatch):
+    """push_metrics COM gateway mockado → chama push_to_gateway (linha 59)."""
+    monkeypatch.setenv('PROMETHEUS_PUSHGATEWAY', 'http://fake-gateway:9091')
+
+    called = []
+
+    def fake_push(gateway, job, registry):
+        called.append(gateway)
+
+    monkeypatch.setattr(metrics, 'push_to_gateway', fake_push)
+    metrics.push_metrics(job='test_job')
+    assert called == ['http://fake-gateway:9091']
+
