@@ -1,7 +1,36 @@
+import time
 import requests
 import streamlit as st
 
-API_BASE = "http://127.0.0.1:8000"
+API_BASE = "https://mlet-5-tech-challenge.vercel.app"
+
+_SESSION = requests.Session()
+
+def post_with_retry(url: str, payload: dict, *, retries: int = 3, timeout: int = 20, backoff: float = 1.7):
+    """
+    Faz POST com retries e backoff exponencial para lidar com:
+    - cold start no Vercel
+    - instabilidade momentânea
+    - timeouts
+    """
+    last_err = None
+    for attempt in range(retries):
+        try:
+            return _SESSION.post(url, json=payload, timeout=timeout)
+        except (requests.Timeout, requests.ConnectionError, requests.RequestException) as e:
+            last_err = e
+            time.sleep(backoff ** attempt)
+    raise last_err
+
+@st.cache_data(ttl=120, show_spinner=False)
+def warmup():
+    try:
+        _SESSION.get(f"{API_BASE}/health", timeout=5)
+    except Exception:
+        pass
+
+
+warmup()
 
 st.title("🧠 Score - Risco de Defasagem", text_alignment='center')
 st.caption("Preencha as variáveis e calcule o score (%) de risco de defasagem escolar do aluno.", text_alignment='center')
@@ -73,9 +102,6 @@ with st.form("score_form"):
     submitted = st.form_submit_button("Calcular score")
 
 if submitted:
-    IPP_IMPUTADO = 0  # feature fixa
-
-    # ✅ PAYLOAD COM CHAVES TÉCNICAS (sem acento/espaço)
     payload = {
         "FASE": FASE,
         "IDADE": IDADE,
@@ -94,7 +120,14 @@ if submitted:
     }
 
     try:
-        r = requests.post(f"{API_BASE}/score", json=payload, timeout=10)
+        with st.spinner("🔄 Consultando a API e calculando o score..."):
+            r = post_with_retry(
+                f"{API_BASE}/score",
+                payload,
+                retries=3,
+                timeout=20,   
+                backoff=1.7
+            )
 
         if r.status_code != 200:
             st.error(f"Erro na API: {r.status_code} - {r.text}")
@@ -119,13 +152,12 @@ if submitted:
         with st.expander("Ver payload enviado"):
             st.json(payload)
 
-    except requests.RequestException as e:
-        st.error(f"Não consegui conectar na API ({API_BASE}). Subiu o FastAPI? Detalhe: {e}")
+    except Exception as e:
+        st.error("Não consegui obter resposta da API agora (lentidão/instabilidade).")
+        st.caption(f"Detalhe técnico: {e}")
+        st.stop()
 
-# =============================
-# Rodapé e informações da desenvolvedora
-# =============================
-
+# Rodapé
 st.markdown(
     """
     <hr>
