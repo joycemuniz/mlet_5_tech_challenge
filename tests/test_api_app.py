@@ -4,7 +4,12 @@ import json
 import pytest
 from pathlib import Path
 
+from fastapi.testclient import TestClient
+
 from src.api import app as app_module
+from src.api.app import app
+
+client = TestClient(app)
 
 
 def test_load_artifacts_missing(tmp_path, monkeypatch):
@@ -36,3 +41,44 @@ def test_load_artifacts_success(tmp_path, monkeypatch):
     app_module.load_artifacts()
     assert app_module._model == dummy
     assert app_module._features == features
+
+
+def test_health():
+    r = client.get("/health")
+    assert r.status_code == 200
+    assert r.json().get("status") == "ok"
+
+
+def test_score_no_model():
+    app_module._model = None
+    r = client.post("/score", json={"a": 1})
+    assert r.status_code == 500
+    assert "Modelo não carregado" in r.text
+
+
+def test_score_incompatible_model():
+    class Bad:
+        pass
+
+    app_module._model = Bad()
+    r = client.post("/score", json={"a": 1})
+    assert r.status_code == 500
+    assert "Modelo incompatível" in r.text
+
+
+def test_score_ok():
+    class Dummy:
+        def predict(self, X):
+            return [0]
+
+        def predict_proba(self, X):
+            import numpy as np
+            return np.array([[0.7, 0.3]])
+
+    app_module._model = Dummy()
+    app_module._features = None
+    r = client.post("/score", json={"feature1": 1})
+    assert r.status_code == 200
+    data = r.json()
+    assert "classe_predita" in data
+    assert "score_risco" in data

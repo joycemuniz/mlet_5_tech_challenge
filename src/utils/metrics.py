@@ -1,100 +1,106 @@
 from __future__ import annotations
 
-import os
 import time
-import re
-from prometheus_client import Counter, Histogram, Gauge, CollectorRegistry, generate_latest, CONTENT_TYPE_LATEST, push_to_gateway
 
-# registry shared across modules; allows for pushgateway if configured
-registry = CollectorRegistry()
 
-# API metrics
-REQUEST_COUNT = Counter(
-    'api_request_count',
-    'Total number of HTTP requests handled by the API',
-    ['endpoint', 'method', 'http_status'],
-    registry=registry,
-)
-# Some Prometheus client versions expose counters with a `_total` suffix.
-# Tests expect a metric name `api_request_count{...}` without the `_total` suffix,
-# so also expose a Gauge with the same name and labels which we will update
-# alongside the Counter to make the plain name available in the exposition.
-REQUEST_LATENCY = Histogram(
-    'api_request_latency_seconds',
-    'Latency of HTTP requests',
-    ['endpoint'],
-    registry=registry,
-)
+class _CounterChild:
+    """Single labelled counter instance."""
 
-# Model training / evaluation metrics
-TRAIN_DURATION = Histogram(
-    'model_train_duration_seconds',
-    'Duration of model training calls',
-    registry=registry,
-)
-EVAL_F1 = Gauge(
-    'model_f1_score',
-    'F1 score of the most recent evaluation',
-    registry=registry,
-)
-EVAL_ROC_AUC = Gauge(
-    'model_roc_auc',
-    'ROC AUC of the most recent evaluation',
-    registry=registry,
-)
+    def __init__(self, store: dict, key: tuple) -> None:
+        self._store = store
+        self._key = key
 
-# Pipeline metrics
-DATA_ROWS = Gauge(
-    'pipeline_data_rows',
-    'Number of rows at different stages of the pipeline',
-    ['stage'],
-    registry=registry,
-)
+    def inc(self, amount: float = 1) -> None:
+        self._store[self._key] = self._store.get(self._key, 0) + amount
+
+
+class _Counter:
+    """In-memory request counter (no external dependencies)."""
+
+    def __init__(self) -> None:
+        self._values: dict = {}
+
+    def labels(self, **kwargs) -> _CounterChild:
+        key = tuple(sorted(kwargs.items()))
+        return _CounterChild(self._values, key)
+
+
+class _NullContextManager:
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args):
+        pass
+
+
+class _HistogramLabelled:
+    def time(self) -> _NullContextManager:
+        return _NullContextManager()
+
+    def observe(self, value: float) -> None:
+        pass
+
+
+class _Histogram:
+    """In-memory histogram stub."""
+
+    def labels(self, **kwargs) -> _HistogramLabelled:
+        return _HistogramLabelled()
+
+    def time(self) -> _NullContextManager:
+        return _NullContextManager()
+
+    def observe(self, value: float) -> None:
+        pass
+
+
+class _GaugeChild:
+    def __init__(self, store: dict, key: tuple) -> None:
+        self._store = store
+        self._key = key
+
+    def set(self, value: float) -> None:
+        self._store[self._key] = value
+
+
+class _Gauge:
+    """In-memory gauge stub."""
+
+    def __init__(self) -> None:
+        self._value: float = 0.0
+        self._values: dict = {}
+
+    def labels(self, **kwargs) -> _GaugeChild:
+        key = tuple(sorted(kwargs.items()))
+        return _GaugeChild(self._values, key)
+
+    def set(self, value: float) -> None:
+        self._value = value
+
+
+# ---------------------------------------------------------------------------
+# Public metric objects (same names as before so existing imports still work)
+# ---------------------------------------------------------------------------
+
+REQUEST_COUNT = _Counter()
+REQUEST_LATENCY = _Histogram()
+TRAIN_DURATION = _Histogram()
+EVAL_F1 = _Gauge()
+EVAL_ROC_AUC = _Gauge()
+DATA_ROWS = _Gauge()
 
 
 def push_metrics(job: str = 'ml_pipeline') -> None:
-    """If PROMETHEUS_PUSHGATEWAY is set, push current registry to it."""
-    gateway = os.getenv('PROMETHEUS_PUSHGATEWAY')
-    if gateway:
-        push_to_gateway(gateway, job=job, registry=registry)
-
-
-def metrics_endpoint() -> tuple[bytes, str]:
-    """Return content and content_type suitable for FastAPI Response.
-
-    Some Prometheus client versions expose Counter metrics with a `_total`
-    suffix (e.g. `api_request_count_total`). Tests expect the base name
-    `api_request_count{...}`; to keep things simple we post-process the
-    generated exposition to also include the base counter name without the
-    `_total` suffix.
-    """
-    txt = generate_latest(registry).decode()
-
-    # Reorder the labels for api_request_count metrics to the expected order
-    # `endpoint`, `method`, `http_status` so tests that expect that exact
-    # ordering will match. Handle both the counter and the created metric.
-    def _reorder_labels(match):
-        inner = match.group(1)
-        parts = re.findall(r'(\w+)="([^"]*)"', inner)
-        d = {k: v for k, v in parts}
-        ordered = f'endpoint="{d.get("endpoint","")}",method="{d.get("method","")}",http_status="{d.get("http_status","")}"'
-        return f'{match.group(0).split("{")[0]}{{{ordered}}}'
-
-    txt = re.sub(r'api_request_count_total\{([^}]*)\}', _reorder_labels, txt)
-    txt = re.sub(r'api_request_count_created\{([^}]*)\}', _reorder_labels, txt)
-
-    # Also provide the base metric name without the `_total` suffix so tests
-    # that look for `api_request_count{...}` will find it.
-    txt = txt.replace('api_request_count_total', 'api_request_count')
-    return txt.encode(), CONTENT_TYPE_LATEST
+    """No-op: Prometheus/Grafana integration removed."""
+    pass
 
 
 class Timer:
-    """Context manager that observes duration in a Histogram."""
+    """Context manager that measures elapsed time."""
 
-    def __init__(self, hist: Histogram) -> None:
+    def __init__(self, hist) -> None:
         self._hist = hist
-        self._start = None
+        self._start: float | None = None
 
     def __enter__(self):
         self._start = time.time()

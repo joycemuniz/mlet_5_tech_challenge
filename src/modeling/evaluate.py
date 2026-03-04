@@ -15,8 +15,6 @@ from sklearn.metrics import (
 
 from src.modeling.train import split_by_year, TrainConfig
 
-from src.utils.metrics import EVAL_F1, EVAL_ROC_AUC, push_metrics
-
 
 def evaluate_model(model, X_test, y_test):
     y_pred = model.predict(X_test)
@@ -38,11 +36,6 @@ def evaluate_model(model, X_test, y_test):
     print(f"F1-score: {f1:.3f}")
     if roc_auc is not None:
         print(f"ROC-AUC: {roc_auc:.3f}")
-
-    EVAL_F1.set(float(f1))
-    if roc_auc is not None:
-        EVAL_ROC_AUC.set(float(roc_auc))
-    push_metrics()
 
     return {
         "f1": float(f1),

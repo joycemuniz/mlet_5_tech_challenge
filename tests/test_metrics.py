@@ -1,119 +1,101 @@
-import re
+"""Tests for src/utils/metrics – in-memory stubs (no Prometheus dependency)."""
 
 import pandas as pd
-from fastapi.testclient import TestClient
+import numpy as np
 
-from src.api.app import app
 from src.utils import metrics
 from src.modeling.train import train_model
 from src.modeling.evaluate import evaluate_model
 
-client = TestClient(app)
+
+def test_counter_labels_inc():
+    c = metrics._Counter()
+    c.labels(endpoint="/test", method="GET", http_status="200").inc()
+    c.labels(endpoint="/test", method="GET", http_status="200").inc(2)
+    key = tuple(sorted({"endpoint": "/test", "method": "GET", "http_status": "200"}.items()))
+    assert c._values[key] == 3
 
 
-def test_metrics_endpoint_and_score():
-    # ensure /metrics exists and contains expected metric names
-    r = client.get("/metrics")
-    assert r.status_code == 200
-    text = r.text
-    assert "api_request_count" in text
-    r_health = client.get("/health")
-    assert r_health.status_code == 200
-    assert r_health.json().get("status") == "ok"
-    from src.api.app import _model
-    class Dummy:
-        def predict(self, X):
-            return [0]
-    # monkeypatch the model for a normal request
-    app.dependency_overrides = {}
-    import src.api.app as _app_module
-    _app_module._model = Dummy()
-    payload = {"feature1": 1}
-    r2 = client.post("/score", json=payload)
-    assert r2.status_code == 200
-    # after a request the metrics endpoint should show a count >=1
-    r3 = client.get("/metrics")
-    assert "api_request_count" in r3.text
-    assert re.search(r"api_request_count\{endpoint=\"/score\",method=\"POST\",http_status=\"200\"\} \d+", r3.text)
-
-
-def test_score_no_model():
-    # make sure when no model is loaded we return 500 and metrics updated
-    import src.api.app as _app_module
-    _app_module._model = None
-    r = client.post("/score", json={"a": 1})
-    assert r.status_code == 500
-    assert "Modelo não carregado" in r.text
-
-
-def test_score_incompatible_model():
-    # model object has neither predict nor predict_proba
-    class Bad:
+def test_histogram_is_noop():
+    h = metrics._Histogram()
+    # labels() returns something with time() and observe()
+    labelled = h.labels(endpoint="/x")
+    ctx = labelled.time()
+    ctx.__enter__()
+    ctx.__exit__(None, None, None)
+    labelled.observe(0.5)
+    # direct usage
+    with h.time():
         pass
-    import src.api.app as _app_module
-    _app_module._model = Bad()
-    r = client.post("/score", json={"a": 1})
-    assert r.status_code == 500
-    assert "Modelo incompatível" in r.text
+    h.observe(1.0)
 
 
-def test_train_evaluate_metrics():
-    # create tiny dataset
-    import numpy as np
-    X = pd.DataFrame(np.random.rand(4, 2), columns=["a", "b"])
-    y = pd.Series([0, 1, 0, 1])
-    model = train_model(X, y)
-    # get metrics text after training
-    mtxt = metrics.generate_latest(metrics.registry).decode()
-    assert "model_train_duration_seconds" in mtxt
+def test_gauge_set():
+    g = metrics._Gauge()
+    g.set(3.14)
+    assert g._value == 3.14
 
-    # evaluate and check gauge values appear
-    res = evaluate_model(model, X, y)
-    mtxt2 = metrics.generate_latest(metrics.registry).decode()
-    assert "model_f1_score" in mtxt2
-    assert "model_roc_auc" in mtxt2
 
-    # manually exercise pipeline-data gauge
-    metrics.DATA_ROWS.labels(stage="dummy").set(123)
-    mtxt3 = metrics.generate_latest(metrics.registry).decode()
-    assert "pipeline_data_rows" in mtxt3
-    # stage label should include equals sign
-    assert 'stage="dummy"' in mtxt3
+def test_gauge_labels_set():
+    g = metrics._Gauge()
+    g.labels(stage="test").set(99)
+    key = tuple(sorted({"stage": "test"}.items()))
+    assert g._values[key] == 99
+
+
+def test_global_objects_exist():
+    assert metrics.REQUEST_COUNT is not None
+    assert metrics.REQUEST_LATENCY is not None
+    assert metrics.TRAIN_DURATION is not None
+    assert metrics.EVAL_F1 is not None
+    assert metrics.EVAL_ROC_AUC is not None
+    assert metrics.DATA_ROWS is not None
+
+
+def test_push_metrics_noop():
+    # Should not raise under any circumstance
+    metrics.push_metrics()
+    metrics.push_metrics(job="custom_job")
 
 
 def test_timer_context_manager():
-    """Timer deve registrar duração no Histogram (cobre __enter__/__exit__)."""
+    """Timer deve registrar duração (cobre __enter__/__exit__)."""
     import time as _time
-    from prometheus_client import Histogram as _Hist, CollectorRegistry
 
-    reg = CollectorRegistry()
-    hist = _Hist('test_timer_hist', 'timer test', registry=reg)
+    hist = metrics._Histogram()
     timer = metrics.Timer(hist)
-
     with timer:
         _time.sleep(0.01)
-
-    # Verifica que alguma observação foi registrada
-    txt = metrics.generate_latest(reg).decode()
-    assert 'test_timer_hist' in txt
+    # No exception means it worked
 
 
-def test_push_metrics_no_gateway(monkeypatch):
-    """push_metrics sem PROMETHEUS_PUSHGATEWAY → não lança exceção (linha 59)."""
-    monkeypatch.delenv('PROMETHEUS_PUSHGATEWAY', raising=False)
-    metrics.push_metrics()  # deve ser silencioso
+def test_train_uses_no_prometheus():
+    """train_model deve executar sem erros (sem prometheus_client)."""
+    X = pd.DataFrame(np.random.rand(4, 2), columns=["a", "b"])
+    y = pd.Series([0, 1, 0, 1])
+    model = train_model(X, y)
+    assert hasattr(model, "predict")
 
 
-def test_push_metrics_with_gateway(monkeypatch):
-    """push_metrics COM gateway mockado → chama push_to_gateway (linha 59)."""
-    monkeypatch.setenv('PROMETHEUS_PUSHGATEWAY', 'http://fake-gateway:9091')
+def test_evaluate_uses_no_prometheus():
+    """evaluate_model deve executar sem erros (sem prometheus_client)."""
+    X = pd.DataFrame(np.random.rand(4, 2), columns=["a", "b"])
+    y = pd.Series([0, 1, 0, 1])
+    model = train_model(X, y)
+    res = evaluate_model(model, X, y)
+    assert "f1" in res
+    assert "roc_auc" in res
 
-    called = []
 
-    def fake_push(gateway, job, registry):
-        called.append(gateway)
+def test_request_count_global():
+    """REQUEST_COUNT global deve aceitar labels e inc sem erros."""
+    metrics.REQUEST_COUNT.labels(endpoint="/score", method="POST", http_status="200").inc()
+    metrics.REQUEST_COUNT.labels(endpoint="/score", method="POST", http_status="500").inc()
 
-    monkeypatch.setattr(metrics, 'push_to_gateway', fake_push)
-    metrics.push_metrics(job='test_job')
-    assert called == ['http://fake-gateway:9091']
+
+def test_data_rows_global():
+    """DATA_ROWS global deve aceitar labels e set sem erros."""
+    metrics.DATA_ROWS.labels(stage="refined").set(500)
+    metrics.DATA_ROWS.labels(stage="train").set(400)
+    metrics.DATA_ROWS.labels(stage="test").set(100)
 

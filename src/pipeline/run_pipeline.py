@@ -41,10 +41,6 @@ def main():
     # 3) Carregar base refined
     df = load_data(str(REFINED_DATASET_PATH))
 
-    # métricas (se você estiver usando)
-    from src.utils import metrics
-    metrics.DATA_ROWS.labels(stage="refined").set(len(df))
-
     # 4) Feature engineering (não remove colunas)
     df = create_features(df)
 
@@ -63,8 +59,6 @@ def main():
 
     # 6) Split temporal (saída deve ser X_train/X_test sem target)
     X_train, X_test, y_train, y_test = split_by_year(df, cfg=cfg)
-    metrics.DATA_ROWS.labels(stage="train").set(len(X_train))
-    metrics.DATA_ROWS.labels(stage="test").set(len(X_test))
 
     # 7) FORÇA conjunto fixo de features (contrato do projeto)
     # Isso garante que o modelo sempre treina e prevê com as mesmas variáveis.
@@ -82,9 +76,6 @@ def main():
 
     # 11) Salvar modelo
     save_model(model, path=str(MODEL_PATH))
-
-    # push métricas (se você estiver usando gateway)
-    metrics.push_metrics()
 
     print(f"Modelo salvo em {MODEL_PATH}")
 

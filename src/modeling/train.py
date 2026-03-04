@@ -7,7 +7,6 @@ import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 
 from src.utils.config import SplitConfig, ModelConfig, FEATURE_COLUMNS
-from src.utils.metrics import TRAIN_DURATION, push_metrics
 
 
 @dataclass(frozen=True)
@@ -83,10 +82,7 @@ def train_model(X_train: pd.DataFrame, y_train: pd.Series, cfg: TrainConfig = No
         n_jobs=-1,
     )
 
-    with TRAIN_DURATION.time():
-        model.fit(X_train, y_train)
-
-    push_metrics()
+    model.fit(X_train, y_train)
     return model
 
 def save_model(model, path: str):
