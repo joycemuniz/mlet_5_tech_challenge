@@ -14,9 +14,6 @@ def load_data(path: str):
     elif path.suffix in [".xlsx", ".xls"]:
         return pd.read_excel(path)
 
-    elif path.suffix == ".parquet":
-        return pd.read_parquet(path)
-
     else:
         raise ValueError(f"Formato de arquivo não suportado: {path.suffix}")
 
