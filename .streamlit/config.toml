@@ -4,4 +4,4 @@ port = 8501
 
 [theme]
 base = "dark"
-primaryColor = "#0805c7"
+primaryColor = "#f28133"

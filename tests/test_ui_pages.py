@@ -13,9 +13,6 @@ import json
 import sys
 import types
 
-import matplotlib
-matplotlib.use("Agg")  # backend sem GUI para evitar erros de Tk em CI
-
 import pandas as pd
 import pytest
 
@@ -69,9 +66,6 @@ def make_dummy_st(submit=False, slider_val=50):
             return self
 
         def bar_chart(self, *a, **kw):
-            return self
-
-        def pyplot(self, *a, **kw):
             return self
 
     return Dummy()

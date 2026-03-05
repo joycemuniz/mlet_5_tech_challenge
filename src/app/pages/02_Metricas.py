@@ -2,7 +2,6 @@ from pathlib import Path
 import json
 
 import pandas as pd
-import matplotlib.pyplot as plt
 import streamlit as st
 
 from src.utils.config import METRICS_PATH, PREDICTIONS_PATH
@@ -71,21 +70,24 @@ if len(scores) > 0 and scores.max() <= 1.0:
 else:
     scores_plot = scores
 
-fig = plt.figure()
-plt.hist(scores_plot, bins=20)
-plt.xlabel("Score (%)")
-plt.ylabel("Frequência")
-st.pyplot(fig)
-plt.close(fig)
+bins = pd.cut(scores_plot, bins=10, labels=[f"{int(i*10)}–{int(i*10+10)}%" for i in range(10)])
+hist_df = (
+    bins.value_counts()
+    .sort_index()
+    .rename("Nº de alunos")
+    .to_frame()
+    .rename_axis("Score de risco")
+)
+st.bar_chart(hist_df, x_label="Score de risco (%)", y_label="Nº de alunos", color="#f28133")
 
 st.subheader("Distribuição das classes (real vs predita)")
 c1, c2 = st.columns(2)
 with c1:
     st.write("Real (y_true)")
-    st.bar_chart(df["y_true"].value_counts().sort_index())
+    st.bar_chart(df["y_true"].value_counts().sort_index(), color="#145089")
 with c2:
     st.write("Predita (y_pred)")
-    st.bar_chart(df["y_pred"].value_counts().sort_index())
+    st.bar_chart(df["y_pred"].value_counts().sort_index(), color="#145089")
 
 st.subheader("Simulador de threshold (política de decisão)")
 st.caption("Útil para discutir trade-off: reduzir FN (perder menos alunos em risco) vs reduzir FP (menos alarmes falsos).")
