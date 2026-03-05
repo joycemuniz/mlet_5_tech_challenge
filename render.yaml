@@ -1,0 +1,28 @@
+services:
+  # ─────────────────────────────────────────────
+  # FastAPI – serviço de score
+  # ─────────────────────────────────────────────
+  - type: web
+    name: mlet5-api
+    runtime: python
+    buildCommand: pip install -r requirements-api.txt
+    startCommand: uvicorn src.api.app:app --host 0.0.0.0 --port $PORT
+    autoDeploy: true
+
+  # ─────────────────────────────────────────────
+  # Streamlit – interface do usuário
+  # ─────────────────────────────────────────────
+  - type: web
+    name: mlet5-app
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: >
+      streamlit run src/app/Home.py
+      --server.port $PORT
+      --server.address 0.0.0.0
+      --server.headless true
+    envVars:
+      - key: PYTHON_VERSION
+      - key: API_BASE
+        value: https://mlet5-api.onrender.com
+    autoDeploy: true
