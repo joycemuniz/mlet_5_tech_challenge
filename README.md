@@ -39,69 +39,69 @@ O modelo retorna:
 
 ## 🏗 Arquitetura do Projeto
 
-mlet_5_tech_challenge/ 
-│ 
-├── .github/ 
-│   └── workflows/ 
-│       └── ci.yml 
-│ 
-├── .streamlit/ 
-│   └── config.toml 
-│ 
-├── data/ 
-│   ├── raw/ 
-│   │   └── BASE DE DADOS PEDE 2024 - DATATHON.xlsx 
-│   ├── interim/ 
-│   │   └── dataset_concatenado.csv 
-│   └── refined/ 
-│       └── dados_modelo.csv 
-│ 
-├── models/ 
-│   └── model.pkl 
-│ 
-├── notebooks/ 
-│   ├── 01_eda.ipynb 
-│   ├── 02_preprocessing.ipynb 
-│   └── 03_modelagem.ipynb 
-│ 
-├── reports/ 
-│   ├── metrics.json 
-│   └── predictions.csv 
-│ 
-├── src/ 
-│   ├── api/ 
-│   │   └── app.py 
-│   │ 
-│   ├── app/ 
-│   │   ├── Home.py 
-│   │   └── pages/ 
-│   │       ├── 01_Score.py 
-│   │       └── 02_Metricas.py 
-│   │ 
-│   ├── modeling/ 
-│   │   ├── train.py 
-│   │   └── evaluate.py 
-│   │ 
-│   ├── pipeline/ 
-│   │   ├── data_consolidation.py 
-│   │   ├── preprocessing.py 
-│   │   ├── feature_engineering.py 
-│   │   └── run_pipeline.py 
-│   │ 
-│   └── utils/ 
-│       ├── config.py 
-│       ├── metrics.py 
-│       └── utils.py 
-│ 
-├── test/ 
-│   └── testes automatizados 
-│ 
-├── Dockerfile 
-├── render.yaml 
-├── requirements.txt 
-├── requirements-api.txt 
-├── runtime.txt 
-└── README.md 
+mlet_5_tech_challenge/
+│
+├── .github/
+│   └── workflows/
+│       └── ci.yml
+│
+├── .streamlit/
+│   └── config.toml
+│
+├── data/
+│   ├── raw/
+│   │   └── BASE DE DADOS PEDE 2024 - DATATHON.xlsx
+│   ├── interim/
+│   │   └── dataset_concatenado.csv
+│   └── refined/
+│       └── dados_modelo.csv
+│
+├── models/
+│   └── model.pkl
+│
+├── notebooks/
+│   ├── 01_eda.ipynb
+│   ├── 02_preprocessing.ipynb
+│   └── 03_modelagem.ipynb
+│
+├── reports/
+│   ├── metrics.json
+│   └── predictions.csv
+│
+├── src/
+│   ├── api/
+│   │   └── app.py
+│   │
+│   ├── app/
+│   │   ├── Home.py
+│   │   └── pages/
+│   │       ├── 01_Score.py
+│   │       └── 02_Metricas.py
+│   │
+│   ├── modeling/
+│   │   ├── train.py
+│   │   └── evaluate.py
+│   │
+│   ├── pipeline/
+│   │   ├── data_consolidation.py
+│   │   ├── preprocessing.py
+│   │   ├── feature_engineering.py
+│   │   └── run_pipeline.py
+│   │
+│   └── utils/
+│       ├── config.py
+│       ├── metrics.py
+│       └── utils.py
+│
+├── test/
+│   └── testes automatizados
+│
+├── Dockerfile
+├── render.yaml
+├── requirements.txt
+├── requirements-api.txt
+├── runtime.txt
+└── README.md
 
 
 
