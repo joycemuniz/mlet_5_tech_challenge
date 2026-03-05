@@ -2,14 +2,14 @@ import time
 import requests
 import streamlit as st
 
-API_BASE = "https://mlet-5-tech-challenge.vercel.app"
+API_BASE = "https://mlet-5-tech-challenge.onrender.com"
 
 _SESSION = requests.Session()
 
 def post_with_retry(url: str, payload: dict, *, retries: int = 3, timeout: int = 20, backoff: float = 1.7):
     """
     Faz POST com retries e backoff exponencial para lidar com:
-    - cold start no Vercel
+    - cold start no Render
     - instabilidade momentânea
     - timeouts
     """
