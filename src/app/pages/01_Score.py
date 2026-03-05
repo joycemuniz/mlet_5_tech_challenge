@@ -1,9 +1,8 @@
-import os
 import time
 import requests
 import streamlit as st
 
-API_BASE = os.getenv("API_BASE", "https://mlet5-api.onrender.com")
+API_BASE = "API_BASE", "https://mlet-5-tech-challenge.onrender.com"
 
 _SESSION = requests.Session()
 
