@@ -39,6 +39,7 @@ O modelo retorna:
 
 ## 🏗 Arquitetura do Projeto
 
+```bash
 mlet_5_tech_challenge/
 │
 ├── .github/
@@ -102,6 +103,7 @@ mlet_5_tech_challenge/
 ├── requirements-api.txt
 ├── runtime.txt
 └── README.md
+'''
 
 
 
