@@ -240,7 +240,7 @@ Resposta:
 
 ## 🌐 Deploy
 
-- **API**: [Render](https://mlet-5-tech-challenge.onrender.com) 
+- **API**: [Render](https://mlet-5-tech-challenge.onrender.com/docs) 
 - **App Streamlit**: [Streamlit Cloud](https://score-defasagem.streamlit.app/)
 
 ------------------------------------------------------------------------
