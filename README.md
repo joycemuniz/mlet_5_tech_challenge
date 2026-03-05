@@ -39,63 +39,70 @@ O modelo retorna:
 
 ## 🏗 Arquitetura do Projeto
 
-mlet_5_tech_challenge/
-    │
-    ├── .github\workflows
-    │    ├── ci.yml
-    │
-    ├── data/
-    │   ├── raw/
-    │   	 ├── BASE DE DADOS PEDE 2024 - DATATHON.xlsx	
-    │   ├── interim/
-    │        ├── dataset_concatenado.csv
-    │   └── refined/
-    │ 	     ├── dados modelo.csv
-    │
-    ├── models/
-    │   ├── model.pkl
-    │
-    ├── notebooks/
-    │   ├── 01_eda.ipynb
-    │   ├── 02_preprocessing.ipynb   
-    │   ├── 03_modelagem.ipynb
-    │
-    ├── reports/
-    │   ├── metrics.json
-    │   └── predictions.csv
-    │
-    ├── src/
-    │   ├── api/
-    │        ├── app.py
-    │   ├── app/
-    │        ├── pages/
-    │             ├── 01_Score.py
-    │             ├── 02_Metricas.py
-    │        ├── Home.py
-    │   ├── modeling/
-    │        ├── evaluate.py
-    │        ├── train.py
-    │   ├── pipeline/
-    │        ├── data_consolidation.py
-    │        ├── feature_engineering.py
-    │        ├── preprocessing.py
-    │        ├── run_pipeline.py
-    │   └── utils/
-    │        ├── config.py
-    │        ├── metrics.py
-    │        ├── utils.py
-    │
-    ├── test/
-    │   ├── test_evaluate.py
-    │   ├── test_feature_engineering.py
-    │   ├── test_metrics.py
-    │   ├── test_preprocessing.py
-    │   ├── test_train.py
-    │   ├── test_utils.py
-    │
-    └── README.md
-    └── requirements.txt
-    └── Dockerfile
+mlet_5_tech_challenge/ 
+│ 
+├── .github/ 
+│   └── workflows/ 
+│       └── ci.yml 
+│ 
+├── .streamlit/ 
+│   └── config.toml 
+│ 
+├── data/ 
+│   ├── raw/ 
+│   │   └── BASE DE DADOS PEDE 2024 - DATATHON.xlsx 
+│   ├── interim/ 
+│   │   └── dataset_concatenado.csv 
+│   └── refined/ 
+│       └── dados_modelo.csv 
+│ 
+├── models/ 
+│   └── model.pkl 
+│ 
+├── notebooks/ 
+│   ├── 01_eda.ipynb 
+│   ├── 02_preprocessing.ipynb 
+│   └── 03_modelagem.ipynb 
+│ 
+├── reports/ 
+│   ├── metrics.json 
+│   └── predictions.csv 
+│ 
+├── src/ 
+│   ├── api/ 
+│   │   └── app.py 
+│   │ 
+│   ├── app/ 
+│   │   ├── Home.py 
+│   │   └── pages/ 
+│   │       ├── 01_Score.py 
+│   │       └── 02_Metricas.py 
+│   │ 
+│   ├── modeling/ 
+│   │   ├── train.py 
+│   │   └── evaluate.py 
+│   │ 
+│   ├── pipeline/ 
+│   │   ├── data_consolidation.py 
+│   │   ├── preprocessing.py 
+│   │   ├── feature_engineering.py 
+│   │   └── run_pipeline.py 
+│   │ 
+│   └── utils/ 
+│       ├── config.py 
+│       ├── metrics.py 
+│       └── utils.py 
+│ 
+├── test/ 
+│   └── testes automatizados 
+│ 
+├── Dockerfile 
+├── render.yaml 
+├── requirements.txt 
+├── requirements-api.txt 
+├── runtime.txt 
+└── README.md 
+
 
 
 ------------------------------------------------------------------------
@@ -233,8 +240,8 @@ Resposta:
 
 ## 🌐 Deploy
 
-- **API**: [Render]() 
-- **App Streamlit**: [Streamlit Cloud]()
+- **API**: [Render](https://mlet-5-tech-challenge.onrender.com) 
+- **App Streamlit**: [Streamlit Cloud](https://score-defasagem.streamlit.app/)
 
 ------------------------------------------------------------------------
 
