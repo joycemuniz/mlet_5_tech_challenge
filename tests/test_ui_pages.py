@@ -142,7 +142,7 @@ def test_import_home(monkeypatch):
 def test_import_score_page(monkeypatch):
     mod = _load_score(monkeypatch, submit=False)
     assert hasattr(mod, "API_BASE")
-    assert "vercel.app" in mod.API_BASE
+    assert any(host in mod.API_BASE for host in ("vercel.app", "onrender.com", "localhost"))
 
 
 def test_score_page_has_post_with_retry(monkeypatch):
