@@ -146,13 +146,13 @@ random_state = 42
 
 ## 📊 Métricas (Teste 2024)
 
-  Métrica              Valor
-  -------------------- --------
-  F1-score             0.834
-  ROC-AUC              0.887
-  Recall Classe 1      0.914
-  Precision Classe 1   0.767
-  Acurracy             0.816
+| Métrica             | Valor |
+|---------------------|-------|
+| F1-score            | 0.834 |
+| ROC-AUC             | 0.887 |
+| Recall Classe 1     | 0.914 |
+| Precision Classe 1  | 0.767 |
+| Accuracy            | 0.816 |
 
 
 O modelo apresenta forte capacidade discriminativa e bom equilíbrio
