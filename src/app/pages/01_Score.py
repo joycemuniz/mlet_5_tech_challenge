@@ -2,7 +2,7 @@ import time
 import requests
 import streamlit as st
 
-API_BASE = "API_BASE", "https://mlet-5-tech-challenge.onrender.com"
+API_BASE = "https://mlet-5-tech-challenge.onrender.com"
 
 _SESSION = requests.Session()
 
