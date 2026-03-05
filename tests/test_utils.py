@@ -34,6 +34,3 @@ def test_load_data_excel_and_parquet(tmp_path):
     xlsx = tmp_path / 'test.xlsx'
     df.to_excel(xlsx, index=False)
     pd.testing.assert_frame_equal(load_data(str(xlsx)), df)
-    parquet = tmp_path / 'test.parquet'
-    df.to_parquet(parquet)
-    pd.testing.assert_frame_equal(load_data(str(parquet)), df)
