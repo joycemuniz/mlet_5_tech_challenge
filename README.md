@@ -1,4 +1,4 @@
-# 🎓 MLET 5 -- Modelo de Score de Risco de Defasagem Escolar
+# 🎓 MLET 5 - Modelo de Score de Risco de Defasagem Escolar
 
 Machine Learning Engineering -- FIAP
 
