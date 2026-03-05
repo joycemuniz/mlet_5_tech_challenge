@@ -2,7 +2,7 @@ import time
 import requests
 import streamlit as st
 
-API_BASE = "https://mlet-5-tech-challenge.onrender.com"
+API_BASE = "https://mlet-5-tech-challenge.vercel.app/"
 
 _SESSION = requests.Session()
 
